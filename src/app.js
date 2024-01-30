@@ -1,12 +1,15 @@
 const express = require('express');
 const cors = require('cors');
-// const sqlite3 = require('sqlite3').verbose();
-const db = require('./db');
-
-
 const app = express();
+const path = require('path');
+const db = require('./db');
+const googlesheets = require('./googleApi');
+
+
 app.use(cors());
 app.use(express.json()); // Middleware para procesar datos JSON
+app.use(express.static(path.join(__dirname, '../dist')));
+
 
 // Ruta para recibir datos JSON
 app.post('/receive', (req, res) => {
@@ -18,6 +21,7 @@ app.post('/receive', (req, res) => {
     // }
     receivedJson.roscones.forEach((roscon, index) => {
     db.insertRoscon(receivedJson.cliente, roscon)
+    googlesheets.insertRoscon(receivedJson.cliente, roscon)
 
         console.log(`Product ${index + 1}:`);
         console.log(`Type: ${roscon.roscontype}`);
@@ -40,6 +44,25 @@ app.post('/receive', (req, res) => {
     res.json({ mensaje: 'Datos recibidos correctamente' });
 
 });
+
+// Configura una ruta para manejar todas las solicitudes y enviar el archivo 'index.html'
+// app.get('/', (req, res) => {
+//     res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+// });
+
+// app.post('/receive', (req, res) => {
+//     // Simular una espera de 2 segundos antes de responder
+//     setTimeout(() => {
+//         const { cliente, roscones } = req.body;
+//         console.log(`Recibida petición de ${cliente} con ${roscones.length} roscones.`);
+//
+//         // Puedes realizar algún procesamiento adicional aquí antes de enviar la respuesta
+//
+//         // Enviar una respuesta de ejemplo
+//         res.json({ mensaje: 'Petición recibida con éxito después de esperar 2 segundos.' });
+//     }, 2000); // 2000 milisegundos = 2 segundos
+// });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

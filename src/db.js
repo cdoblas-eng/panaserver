@@ -9,6 +9,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
             CREATE TABLE IF NOT EXISTS "roscones" (
             "id" INTEGER,
             "cliente" TEXT NOT NULL,
+            "notas" TEXT,
             "tipo" TEXT NOT NULL,
             "cantidad" INTEGER,
             "fecha" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -22,12 +23,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
             "id" INTEGER,
             "cliente" TEXT NOT NULL,
             "tamano" TEXT NOT NULL,
+            "notas" TEXT,
             "relleno" TEXT NOT NULL,
             "mitad" TEXT,
             "cantidad" NUMERIC NOT NULL,
             "fecha" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             "vendido" BOOLEAN DEFAULT 'FALSE',
-            "notas" TEXT,
             PRIMARY KEY("ID" AUTOINCREMENT)
             )
         `);
@@ -47,11 +48,12 @@ const closeDatabase = () => {
 const insertRoscon = (cliente, roscon) => {
     if (roscon.roscontype !== 'ESPECIAL'){
         db.run(
-            'INSERT INTO roscones (cliente, tipo, cantidad) VALUES (?, ?, ?)',
+            'INSERT INTO roscones (cliente, tipo, cantidad, notas) VALUES (?, ?, ?)',
             [
                 cliente,
                 roscon.roscontype,
-                roscon.quantity
+                roscon.quantity,
+                roscon.notes
             ],
             (err) => {
                 if (err) {
@@ -61,14 +63,14 @@ const insertRoscon = (cliente, roscon) => {
         );
     }else{
         db.run(
-            'INSERT INTO especiales (cliente, cantidad, tamano, relleno, mitad, notas) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO especiales (cliente, cantidad, notas, tamano, relleno, mitad) VALUES (?, ?, ?, ?, ?, ?)',
             [
                 cliente,
                 roscon.quantity,
+                roscon.notes ? roscon.notes : null,
                 roscon.especial.size,
                 roscon.especial.fill,
-                roscon.especial ? roscon.especial.half : null,
-                roscon.especial ? roscon.especial.notes : null
+                roscon.especial ? roscon.especial.half : null
             ],
             (err) => {
                 if (err) {
