@@ -14,16 +14,87 @@ const client = new google.auth.JWT(
     ['https://www.googleapis.com/auth/spreadsheets']
 );
 
+
 async function authorizeClient() {
     await client.authorize();
-    console.log('Cliente autorizado');
+    // console.log('Cliente autorizado');
 }
 
-console.log("INICIO SCRIPT:");
+
+class Lock {
+    constructor() {
+        this.isLocked = false;
+        this.queue = [];
+    }
+
+    async acquire() {
+        if (!this.isLocked) {
+            this.isLocked = true;
+        } else {
+            await new Promise((resolve) => {
+                this.queue.push(resolve);
+            });
+        }
+    }
+
+    release() {
+        if (this.queue.length > 0) {
+            const nextResolver = this.queue.shift();
+            nextResolver();
+        } else {
+            this.isLocked = false;
+        }
+    }
+}
+
+const lock = new Lock();
+
+// async function getLastRow(rosconType) {
+//     try {
+//         await lock.acquire(); // Acquire the lock before entering the critical section
+//
+//         // The critical section
+//
+//         const sheets = google.sheets({ version: 'v4', auth: client });
+//         const sheetName = rosconModule.getSheetTable(rosconType);
+//         const range = `${sheetName}!B3:B`;
+//
+//         const response = await sheets.spreadsheets.values.get({
+//             spreadsheetId: spreadsheetId,
+//             range: range,
+//         });
+//
+//         const values = response.data.values;
+//
+//         if (values) {
+//             for (let i = 0; i < values.length; i++) {
+//                 const row = values[i];
+//                 // console.log(`Row ${i + 1}: ${row}`);
+//             }
+//         }
+//
+//         const startOffset = 3;
+//         const lastRow = values ? values.length + startOffset : startOffset;
+//
+//         // console.log('The next row to be filled is:', lastRow);
+//         return lastRow;
+//     } catch (err) {
+//         console.error('Error while getting the next row:', err);
+//         return -1;
+//     } finally {
+//         lock.release(); // Release the lock after exiting the critical section
+//     }
+// }
+
+// Example usage
+// (async () => {
+//     const result = await getLastRow('roscones');
+//     console.log(result);
+// })();
 
 async function getLastRow(rosconType) {
     try {
-        await authorizeClient();
+        // await authorizeClient();
 
         const sheets = google.sheets({ version: 'v4', auth: client });
         const sheetName = rosconModule.getSheetTable(rosconType);
@@ -39,14 +110,14 @@ async function getLastRow(rosconType) {
         if (values) {
             for (let i = 0; i < values.length; i++) {
                 const row = values[i];
-                console.log(`Row ${i + 1}: ${row}`);
+                // console.log(`Row ${i + 1}: ${row}`);
             }
         }
 
         const startOffset = 3;
         const lastRow = values ? values.length + startOffset : startOffset;
 
-        console.log('The next row to be filled is:', lastRow);
+        // console.log('The next row to be filled is:', lastRow);
         return lastRow;
     } catch (err) {
         console.error('Error while getting the next row:', err);
@@ -56,6 +127,7 @@ async function getLastRow(rosconType) {
 
 async function insertRoscon(cliente, roscon) {
     try {
+        await lock.acquire()
         await client.authorize();
 
         const sheets = google.sheets({ version: 'v4', auth: client });
@@ -71,7 +143,7 @@ async function insertRoscon(cliente, roscon) {
             [cliente, roscon.quantity, roscon.roscontype, roscon.notes, currentDateTime] :
             [cliente, roscon.especial?.size, roscon.especial?.fill, roscon.especial?.half, roscon.quantity, roscon.notes, currentDateTime];
 
-        console.log('RANGO: ' + range);
+        // console.log('RANGO: ' + range);
 
         const request = {
             spreadsheetId: spreadsheetId,
@@ -87,6 +159,8 @@ async function insertRoscon(cliente, roscon) {
         console.log('Fila insertada con éxito:', response.data);
     } catch (err) {
         console.error('Error al insertar fila:', err);
+    }finally {
+        lock.release()
     }
 }
 
@@ -110,26 +184,26 @@ function getCurrentDateTime() {
 }
 
 // Example usage
-const currentDateTime = getCurrentDateTime();
-console.log('Current date and time:', currentDateTime);
-
-
-insertRoscon("FANTASMA DE INDRA", {
-  roscontype: rosconModule.Type.GR_SIN,
-  quantity: 6,
-  price: 20,
-  especial: null,
-});
-
-insertRoscon("BLAS", {
-    roscontype: rosconModule.Type.ESP,
-    quantity: 11,
-    price: 18,
-    especial:{
-        size: rosconModule.Size.GR,
-        fill: rosconModule.Fill.MERENGUE,
-    },
-});
+// const currentDateTime = getCurrentDateTime();
+// console.log('Current date and time:', currentDateTime);
+//
+//
+// insertRoscon("FANTASMA DE INDRA", {
+//   roscontype: rosconModule.Type.GR_SIN,
+//   quantity: 6,
+//   price: 20,
+//   especial: null,
+// });
+//
+// insertRoscon("BLAS", {
+//     roscontype: rosconModule.Type.ESP,
+//     quantity: 11,
+//     price: 18,
+//     especial:{
+//         size: rosconModule.Size.GR,
+//         fill: rosconModule.Fill.MERENGUE,
+//     },
+// });
 
 
 module.exports = {
