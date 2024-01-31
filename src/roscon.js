@@ -36,38 +36,6 @@ const Product = {
     especial: Especial,
 };
 
-
-// const products = [
-//     {
-//         roscontype: Type.GR_NATA,
-//         quantity: 1,
-//         price: 18,
-//         notes: null,
-//         especial: null,
-//     },
-//     {
-//         roscontype: Type.GR_SIN,
-//         quantity: 1,
-//         price: 16,
-//         notes: null,
-//         especial: null,
-//     },
-//     {
-//         roscontype: Type.PEQ_NATA,
-//         quantity: 1,
-//         price: 14,
-//         notes: null,
-//         especial: null,
-//     },
-//     {
-//         roscontype: Type.PEQ_SIN,
-//         quantity: 1,
-//         price: 12,
-//         notes: null,
-//         especial: null,
-//     },
-// ];
-
 function getSheetTable(rosconType) {
     if (rosconType !== Type.ESP)
         return 'roscones'
