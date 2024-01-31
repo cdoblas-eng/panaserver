@@ -36,24 +36,25 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // Función para cerrar la conexión a la base de datos
-const closeDatabase = () => {
+const closeDatabase = (callback) => {
     db.close((err) => {
         if (err) {
             console.error('Error al cerrar la base de datos:', err.message);
         } else {
             console.log('Conexión a la base de datos cerrada');
         }
+        callback();
     });
 };
 const insertRoscon = (cliente, roscon) => {
     if (roscon.roscontype !== 'ESPECIAL'){
         db.run(
-            'INSERT INTO roscones (cliente, tipo, cantidad, notas) VALUES (?, ?, ?)',
+            'INSERT INTO roscones (cliente, tipo, cantidad, notas) VALUES (?, ?, ?, ?)',
             [
                 cliente,
                 roscon.roscontype,
                 roscon.quantity,
-                roscon.notes
+                roscon.notes ? roscon.notes : null
             ],
             (err) => {
                 if (err) {
