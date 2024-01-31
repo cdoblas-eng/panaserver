@@ -14,32 +14,32 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // Ruta para recibir datos JSON
 app.post('/receive', (req, res) => {
     const receivedJson = req.body; // Accede a los datos recibidos en formato JSON
-    console.log('Datos recibidos:', receivedJson);
+     console.log('Datos recibidos:', receivedJson);
 
     // if (!receivedJson || !Array.isArray(receivedJson)) {
     //     return res.status(400).json({ error: 'Invalid JSON format' });
     // }
     receivedJson.roscones.forEach((roscon, index) => {
     db.insertRoscon(receivedJson.cliente, roscon)
-    googlesheets.insertRoscon(receivedJson.cliente, roscon)
+    googlesheets.insertRoscon(receivedJson.cliente, roscon).then(r => console.log('Guardado en la nube'))
 
-        console.log(`Product ${index + 1}:`);
-        console.log(`Type: ${roscon.roscontype}`);
-        console.log(`Quantity: ${roscon.quantity}`);
-        console.log(`Price: $${roscon.price}`);
-
-        if (roscon.especial) {
-            console.log('Especial:');
-            console.log(`  Size: ${roscon.especial.size}`);
-            console.log(`  Fill: ${roscon.especial.fill}`);
-            console.log(`  Half: ${roscon.especial.half || 'N/A'}`);
-        } else {
-            console.log('Especial: N/A');
-        }
-
-        console.log('-------------------------');
+        // console.log(`Cliente: ${receivedJson.cliente}`);
+        // console.log(`Tipo ${index + 1}:`);
+        // console.log(`Type: ${roscon.roscontype}`);
+        // console.log(`Quantity: ${roscon.quantity}`);
+        // console.log(`Price: $${roscon.price}`);
+        //
+        // if (roscon.especial) {
+        //     console.log('Especial:');
+        //     console.log(`  Size: ${roscon.especial.size}`);
+        //     console.log(`  Fill: ${roscon.especial.fill}`);
+        //     console.log(`  Half: ${roscon.especial.half || 'N/A'}`);
+        // } else {
+        //     console.log('Especial: N/A');
+        // }
+        //
+        // console.log('-------------------------');
     });
-
 
     res.json({ mensaje: 'Datos recibidos correctamente' });
 
@@ -67,4 +67,13 @@ app.post('/receive', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
+
+});
+
+// Event listener for process termination
+process.on('SIGINT', () => {
+    console.log('Server is shutting down...');
+    db.closeDatabase(() => {
+        process.exit(0);
+    });
 });
