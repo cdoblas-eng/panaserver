@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Radio Button con Bootstrap</title>
+    <style>
+        .btn-group label.active {
+            background-color: #9f3e81;
+            color: #fff;
+        }
+
+        .btn-group label:not(.active) {
+            background-color: #6c757d;
+            color: #fff;
+        }
+        /* Ocultar el círculo del radio */
+        .btn-group .radio-hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2>Selecciona una opción:</h2>
+    <div class="btn-group" role="group" aria-label="Opciones">
+        <label class="btn active">
+            <input type="radio" class="radio-hidden" name="options" id="option1" autocomplete="off" checked> Opción 1
+        </label>
+        <label class="btn">
+            <input type="radio" class="radio-hidden" name="options" id="option2" autocomplete="off"> Opción 2
+        </label>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function(){
+        $('.btn-group label').click(function(){
+            $('.btn-group label').removeClass('active');
+            $(this).addClass('active');
+        });
+    });
+</script>
+</body>
+</html>

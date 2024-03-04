@@ -1,0 +1,43 @@
+/* styles.css */
+/* styles.css */
+.border {
+  border:10px solid #9f3e81;
+  /*border: 3px solid #9f3e81; !* Modifica el grosor, estilo y color de todos los bordes *!*/
+  /*border-radius: 5px; !* Agrega esquinas redondeadas a todos los elementos *!*/
+  /*!* Agrega más propiedades de estilo según tus necesidades *!*/
+}
+
+.miborde {
+  border:5px solid #9f3e81;
+  border-radius: 0; /* Agrega esquinas redondeadas a todos los elementos */
+}
+.miborde-interno {
+  border:3px solid #9f3e81;
+  border-radius: 5px; /* Agrega esquinas redondeadas a todos los elementos */
+}
+
+body {
+  background-color: rgba(245, 222, 179, 0.76); /* Color de fondo deseado para toda la página */
+  /* Otros estilos si es necesario */
+}
+.btn-auto {
+  padding: 0.375rem 0.75rem; /* Puedes ajustar estos valores según sea necesario */
+  font-size: inherit;
+  line-height: normal;
+  width:90px;
+  height:60px
+}
+
+.btn-group label.active {
+  background-color: #9f3e81;
+  color: #fff;
+}
+
+.btn-group label:not(.active) {
+  background-color: rgba(108, 117, 125, 0.45);
+  color: #fff;
+}
+/* Ocultar el círculo del radio */
+.btn-group .radio-hidden {
+  display: none;
+}
