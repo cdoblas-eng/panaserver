@@ -1,10 +1,12 @@
 const {json} = require("express/lib/response");
-const {sql} = require("googleapis/build/src/apis/sql");
+const {join} = require("node:path");
+// const {sql} = require("googleapis/build/src/apis/sql");
 const sqlite3 = require('sqlite3').verbose();
-const dbPath = '../database/roscon.db'; // Cambia por el nombre que desees
+const dbPath = join(__dirname, '../database/roscon.db');
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error al abrir la base de datos:', err.message);
+        process.exit(1); // Salir si no se puede abrir la base de datos
     } else {
         console.log('Conectado a la base de datos:', dbPath);
         db.run(`
@@ -43,6 +45,7 @@ const closeDatabase = (callback) => {
     db.close((err) => {
         if (err) {
             console.error('Error al cerrar la base de datos:', err.message);
+            process.exit(1);
         } else {
             console.log('Conexión a la base de datos cerrada');
         }
@@ -168,9 +171,6 @@ async function selectAll() {
             });
         });
 }
-
-// console.log(selectRoscones(123).then((value=> console.log(value))))
-// console.log(selectRoscones(123))
 
 module.exports = {
     db,

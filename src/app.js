@@ -16,9 +16,6 @@ app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
 
-
-
-
 // Configura una ruta para manejar todas las solicitudes y enviar el archivo 'index.html'
 // app.get('/', (req, res) => {
 //     res.sendFile(path.join(__dirname, '../dist', 'index.html'));
@@ -112,9 +109,9 @@ app.put('/roscones/:client', (req, res) => {
     res.status(200).json({ message: 'OK' });
 });
 
-// Event listener for process termination
 process.on('SIGINT', () => {
-    console.log('Server is shutting down...');
+    console.log('El servidor se está cerrando...');
+
     db.closeDatabase(() => {
         process.exit(0);
     });
