@@ -3,47 +3,21 @@ const cors = require('cors');
 const app = express();
 const path = require('path');
 const db = require('./db');
-const googlesheets = require('./googleApi');
+// const googlesheets = require('./googleApi');
+const {selectRoscones} = require("./db");
 
 
 app.use(cors());
 app.use(express.json()); // Middleware para procesar datos JSON
 app.use(express.static(path.join(__dirname, '../dist')));
 
-
-// Ruta para recibir datos JSON
-app.post('/receive', (req, res) => {
-    const receivedJson = req.body; // Accede a los datos recibidos en formato JSON
-     console.log('Datos recibidos:', receivedJson);
-
-    // if (!receivedJson || !Array.isArray(receivedJson)) {
-    //     return res.status(400).json({ error: 'Invalid JSON format' });
-    // }
-    receivedJson.roscones.forEach((roscon, index) => {
-    db.insertRoscon(receivedJson.cliente, roscon)
-    googlesheets.insertRoscon(receivedJson.cliente, roscon).then(r => console.log('Guardado en la nube'))
-
-        // console.log(`Cliente: ${receivedJson.cliente}`);
-        // console.log(`Tipo ${index + 1}:`);
-        // console.log(`Type: ${roscon.roscontype}`);
-        // console.log(`Quantity: ${roscon.quantity}`);
-        // console.log(`Price: $${roscon.price}`);
-        //
-        // if (roscon.especial) {
-        //     console.log('Especial:');
-        //     console.log(`  Size: ${roscon.especial.size}`);
-        //     console.log(`  Fill: ${roscon.especial.fill}`);
-        //     console.log(`  Half: ${roscon.especial.half || 'N/A'}`);
-        // } else {
-        //     console.log('Especial: N/A');
-        // }
-        //
-        // console.log('-------------------------');
-    });
-
-    res.json({ mensaje: 'Datos recibidos correctamente' });
-
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
+
+
+
 
 // Configura una ruta para manejar todas las solicitudes y enviar el archivo 'index.html'
 // app.get('/', (req, res) => {
@@ -53,8 +27,8 @@ app.post('/receive', (req, res) => {
 // app.post('/receive', (req, res) => {
 //     // Simular una espera de 2 segundos antes de responder
 //     setTimeout(() => {
-//         const { cliente, roscones } = req.body;
-//         console.log(`Recibida petición de ${cliente} con ${roscones.length} roscones.`);
+//         const { client, roscones } = req.body;
+//         console.log(`Recibida petición de ${client} con ${roscones.length} roscones.`);
 //
 //         // Puedes realizar algún procesamiento adicional aquí antes de enviar la respuesta
 //
@@ -64,10 +38,78 @@ app.post('/receive', (req, res) => {
 // });
 
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor escuchando en el puerto ${PORT}`);
+// app.get('/roscones/:client', async (req, res) => {
+//     const client = req.params.client;
+//     try {
+//         // Llamar al método obtenerResultadosCombinados y esperar los resultados
+//         const results = await selectRoscones(client);
+//         // Enviar los resultados combinados como JSON
+//         res.json(results);
+//         // res.json({"client": client});
+//     } catch (err) {
+//         console.error('Error al obtener resultados combinados:', err);
+//         res.status(500).json({ error: 'Error al obtener resultados combinados' });
+//     }
+// });
 
+
+app.get('/roscones/:client', async (req, res) => {
+    const client = req.params.client;
+    try {
+        // Llamar al método obtenerResultadosCombinados y esperar los resultados
+        const results = await selectRoscones(client);
+        // Enviar los resultados combinados como JSON
+        res.status(200).json(results);
+        // res.json(results);
+    } catch (err) {
+        console.error('Error al obtener resultados combinados:', err);
+        res.status(500).json({ error: 'Error al obtener resultados combinados' });
+    }
+});
+
+// Ruta para recibir datos JSON
+app.post('/roscones/:client', (req, res) => {
+    const client = req.params.client;
+    console.log(client);
+    const receivedJson = req.body; // Accede a los datos recibidos en formato JSON
+    console.log('Datos recibidos:', receivedJson);
+
+    if (!receivedJson || !Array.isArray(receivedJson)) {
+        return res.status(400).json({ error: 'Invalid JSON format' });
+    }
+    receivedJson.forEach((roscon, index) => {
+        db.insertRoscon(client, roscon)
+    });
+
+    res.status(200).json({ message: 'OK' });
+});
+
+app.delete('/roscones/:client', (req, res) => {
+    const client = req.params.client;
+    //Eliminamos todos los roscones del cliente
+    db.deleteOrder(client)
+
+    res.status(200).json({ message: 'OK' });
+    // res.status(200).send('OK');
+});
+
+app.put('/roscones/:client', (req, res) => {
+    const client = req.params.client;
+    console.log(client);
+    const receivedJson = req.body; // Accede a los datos recibidos en formato JSON
+    console.log('Datos recibidos:', receivedJson);
+
+    if (!receivedJson || !Array.isArray(receivedJson)) {
+        return res.status(400).json({ error: 'Invalid JSON format' });
+    }
+    //Eliminamos todos los roscones del cliente
+    db.deleteOrder(client)
+    //Insertamos los nuevos roscones actualizados
+    receivedJson.forEach((roscon, index) => {
+        db.insertRoscon(client, roscon)
+    });
+
+    res.status(200).json({ message: 'OK' });
 });
 
 // Event listener for process termination

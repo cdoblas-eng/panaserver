@@ -1,3 +1,5 @@
+const {json} = require("express/lib/response");
+const {sql} = require("googleapis/build/src/apis/sql");
 const sqlite3 = require('sqlite3').verbose();
 const dbPath = '../database/roscon.db'; // Cambia por el nombre que desees
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -8,11 +10,11 @@ const db = new sqlite3.Database(dbPath, (err) => {
         db.run(`
             CREATE TABLE IF NOT EXISTS "roscones" (
             "id" INTEGER,
-            "cliente" TEXT NOT NULL,
-            "notas" TEXT,
-            "tipo" TEXT NOT NULL,
-            "cantidad" INTEGER,
-            "fecha" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "client" TEXT NOT NULL,
+            "roscontype" TEXT NOT NULL,
+            "quantity" INTEGER,
+            "notes" TEXT,
+            "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             "vendido" BOOLEAN DEFAULT 'FALSE',
             PRIMARY KEY("ID" AUTOINCREMENT)
             )
@@ -21,13 +23,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
         db.run(`
             CREATE TABLE IF NOT EXISTS "especiales" (
             "id" INTEGER,
-            "cliente" TEXT NOT NULL,
-            "tamano" TEXT NOT NULL,
-            "notas" TEXT,
-            "relleno" TEXT NOT NULL,
-            "mitad" TEXT,
-            "cantidad" NUMERIC NOT NULL,
-            "fecha" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "client" TEXT NOT NULL,
+            "roscontype" TEXT NOT NULL DEFAULT 'ESPECIAL',
+            "size" TEXT NOT NULL,
+            "fill" TEXT NOT NULL,
+            "half" TEXT,
+            "quantity" NUMERIC NOT NULL,
+            "notes" TEXT,
+            "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             "vendido" BOOLEAN DEFAULT 'FALSE',
             PRIMARY KEY("ID" AUTOINCREMENT)
             )
@@ -46,12 +49,12 @@ const closeDatabase = (callback) => {
         callback();
     });
 };
-const insertRoscon = (cliente, roscon) => {
-    if (roscon.roscontype !== 'ESPECIAL'){
+const insertRoscon = (client, roscon) => {
+    if (roscon.roscontype !== 'ESPECIAL') {
         db.run(
-            'INSERT INTO roscones (cliente, tipo, cantidad, notas) VALUES (?, ?, ?, ?)',
+            'INSERT INTO roscones (client, roscontype, quantity, notes) VALUES (?, ?, ?, ?)',
             [
-                cliente,
+                client,
                 roscon.roscontype,
                 roscon.quantity,
                 roscon.notes ? roscon.notes : null
@@ -62,11 +65,11 @@ const insertRoscon = (cliente, roscon) => {
                 }
             }
         );
-    }else{
+    } else {
         db.run(
-            'INSERT INTO especiales (cliente, cantidad, notas, tamano, relleno, mitad) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO especiales (client, quantity, notes, size, fill, half) VALUES (?, ?, ?, ?, ?, ?)',
             [
-                cliente,
+                client,
                 roscon.quantity,
                 roscon.notes ? roscon.notes : null,
                 roscon.especial.size,
@@ -83,9 +86,96 @@ const insertRoscon = (cliente, roscon) => {
 
 };
 
+// Función para ejecutar una consulta y devolver una promesa
+function executeQuery(sql, params) {
+    return new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(rows);
+            }
+        });
+    });
+}
+
+async function selectRoscones(client) {
+    const sql_normal = 'SELECT roscontype, quantity, timestamp, notes, vendido FROM roscones WHERE client = ?'
+    const sql_special = 'SELECT roscontype, size, fill, half, quantity, notes, vendido FROM especiales WHERE client = ?'
+    console.log(client);
+
+    // Ejecutar ambas consultas y combinar resultados
+    return Promise.all([
+        executeQuery(sql_normal, [client]),
+        executeQuery(sql_special, [client])
+    ])
+        .then((resultados) => {
+            const [normals, specials] = resultados;
+            return [...normals, ...specials]
+        })
+        .catch((err) => {
+            console.error('Error al obtener resultados combinados:', err);
+        })
+        .finally(() => {
+            // Cerrar la base de datos
+            console.log('Finalizada consulta.');
+        });
+
+}
+
+function deleteOrder(client) {
+
+    db.run('DELETE FROM roscones WHERE client = ? ', [client], function (err) {
+        if (err) {
+            console.error('Error al ejecutar la consulta DELETE:', err);
+            return;
+        }
+    });
+
+    db.run('DELETE FROM especiales WHERE client = ? ', [client], function (err) {
+        if (err) {
+            console.error('Error al ejecutar la consulta DELETE:', err);
+            return;
+        }
+    });
+
+}
+
+
+async function selectAll() {
+    const sql_normal = 'SELECT roscontype, quantity, timestamp, notes, vendido FROM roscones'
+    const sql_special = 'SELECT roscontype, size, fill, half, quantity, notes, vendido FROM especiales'
+
+    // Ejecutar ambas consultas y combinar resultados
+    return Promise.all([
+        executeQuery(sql_normal, []),
+        executeQuery(sql_special, [])
+    ])
+        .then((resultados) => {
+            const [normals, specials] = resultados;
+            return [...normals, ...specials]
+        })
+        .catch((err) => {
+            console.error('Error al obtener los resultados:', err);
+        })
+        .finally(() => {
+            // Cerrar la base de datos
+            db.close((err) => {
+                if (err) {
+                    console.error(err.message);
+                }
+                console.log('Cerrada la conexión a la base de datos SQLite.');
+            });
+        });
+}
+
+// console.log(selectRoscones(123).then((value=> console.log(value))))
+// console.log(selectRoscones(123))
 
 module.exports = {
     db,
     closeDatabase,
-    insertRoscon
+    insertRoscon,
+    selectRoscones,
+    deleteOrder
 };
