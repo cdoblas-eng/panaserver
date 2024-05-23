@@ -41,6 +41,6 @@ Esto iniciará el servidor Express en el puerto 3000 por defecto.
 
 ## Licencia
 
-Este proyecto está licenciado bajo la Licencia MIT.
+Este proyecto está licenciado bajo la [Licencia MIT](LICENSE).
 
 
