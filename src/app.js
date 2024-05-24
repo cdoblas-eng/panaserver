@@ -4,8 +4,6 @@ const app = express();
 const path = require('path');
 const db = require('./db');
 // const googlesheets = require('./googleApi');
-const {selectRoscones} = require("./db");
-
 
 app.use(cors());
 app.use(express.json()); // Middleware para procesar datos JSON
@@ -54,7 +52,20 @@ app.get('/roscones/:client', async (req, res) => {
     const client = req.params.client;
     try {
         // Llamar al método obtenerResultadosCombinados y esperar los resultados
-        const results = await selectRoscones(client);
+        const results = await db.selectRoscones(client);
+        // Enviar los resultados combinados como JSON
+        res.status(200).json(results);
+        // res.json(results);
+    } catch (err) {
+        console.error('Error al obtener resultados:', err);
+        res.status(500).json({ error: 'Error al obtener resultados de base de datos' });
+    }
+});
+// Metodo para obtener todos los roscones
+app.get('/roscones', async (req, res) => {
+    try {
+        // Llamar al método obtenerResultadosCombinados y esperar los resultados
+        const results = await db.selectAll();
         // Enviar los resultados combinados como JSON
         res.status(200).json(results);
         // res.json(results);
@@ -74,7 +85,7 @@ app.post('/roscones/:client', (req, res) => {
     if (!receivedJson || !Array.isArray(receivedJson)) {
         return res.status(400).json({ error: 'Invalid JSON format' });
     }
-    receivedJson.forEach((roscon, index) => {
+    receivedJson.forEach((roscon) => {
         db.insertRoscon(client, roscon)
     });
 
@@ -102,7 +113,7 @@ app.put('/roscones/:client', (req, res) => {
     //Eliminamos todos los roscones del cliente
     db.deleteOrder(client)
     //Insertamos los nuevos roscones actualizados
-    receivedJson.forEach((roscon, index) => {
+    receivedJson.forEach((roscon) => {
         db.insertRoscon(client, roscon)
     });
 
