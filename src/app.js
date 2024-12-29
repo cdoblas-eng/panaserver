@@ -153,7 +153,6 @@ app.put('/roscones/:client', (req, res) => {
 
 app.put('/sold/:client', (req, res) => {
     const client = req.params.client;
-    //Marcamos los roscones del cliente a vendidos
     db.markAsSold(client);
 
     res.status(200).json({ message: 'OK' });
@@ -161,7 +160,6 @@ app.put('/sold/:client', (req, res) => {
 
 app.put('/unsold/:client', (req, res) => {
     const client = req.params.client;
-    //Marcamos los roscones del cliente a vendidos
     db.markAsUnsold(client);
 
     res.status(200).json({ message: 'OK' });
