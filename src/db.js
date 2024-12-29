@@ -73,6 +73,16 @@ async function selectRoscones(client) {
     return executeQuery(select_query, [client])
 }
 
+async function markAsSold(client) {
+    const select_query = 'UPDATE roscones SET vendido = \'TRUE\' WHERE client = ?'
+    return executeQuery(select_query, [client])
+}
+
+async function markAsUnsold(client) {
+    const select_query = 'UPDATE roscones SET vendido = \'FALSE\' WHERE client = ?'
+    return executeQuery(select_query, [client])
+}
+
 function deleteOrder(client) {
     db.run('DELETE FROM roscones WHERE client = ? ', [client], function (err) {
         if (err) {
@@ -87,11 +97,38 @@ async function selectAll() {
     return executeQuery(select_all_query, []);
 }
 
+async function selectAllSpecials() {
+    const select_all_query = 'SELECT client, size, fill, half, quantity, timestamp, notes, vendido FROM roscones WHERE ((fill != ? AND fill != ?) OR half IS NOT NULL)'
+    return executeQuery(select_all_query, ['NATA', 'SIN']);
+}
+
+async function sumAllBySize(size) {
+    const select_query = 'SELECT SUM(quantity) FROM roscones WHERE size = ?'
+    return executeQuery(select_query, [size])
+}
+
+
+async function sumAllBySizeAndFill(size, fill) {
+    const select_query = 'SELECT SUM(quantity) FROM roscones WHERE size = ? AND fill = ?'
+    return executeQuery(select_query, [size, fill])
+}
+
+async function sumSpecialsBySize(size) {
+    const select_query = 'SELECT SUM(quantity) FROM roscones WHERE size = ? AND ((fill != ? AND fill != ?) OR half IS NOT NULL)'
+    return executeQuery(select_query, [size, 'NATA', 'SIN'])
+}
+
 module.exports = {
     db,
     closeDatabase,
     insertRoscon,
     selectRoscones,
     deleteOrder,
-    selectAll
+    selectAll,
+    selectAllSpecials,
+    markAsSold,
+    markAsUnsold,
+    sumAllBySize,
+    sumAllBySizeAndFill,
+    sumSpecialsBySize
 };
