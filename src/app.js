@@ -3,7 +3,6 @@ const cors = require('cors');
 const app = express();
 const path = require('path');
 const db = require('./db');
-// const googlesheets = require('./googleApi');
 
 app.use(cors());
 app.use(express.json()); // Middleware para procesar datos JSON
@@ -18,35 +17,6 @@ app.listen(PORT, () => {
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
-
-// app.post('/receive', (req, res) => {
-//     // Simular una espera de 2 segundos antes de responder
-//     setTimeout(() => {
-//         const { client, roscones } = req.body;
-//         console.log(`Recibida petición de ${client} con ${roscones.length} roscones.`);
-//
-//         // Puedes realizar algún procesamiento adicional aquí antes de enviar la respuesta
-//
-//         // Enviar una respuesta de ejemplo
-//         res.json({ mensaje: 'Petición recibida con éxito después de esperar 2 segundos.' });
-//     }, 2000); // 2000 milisegundos = 2 segundos
-// });
-
-
-// app.get('/roscones/:client', async (req, res) => {
-//     const client = req.params.client;
-//     try {
-//         // Llamar al método obtenerResultadosCombinados y esperar los resultados
-//         const results = await selectRoscones(client);
-//         // Enviar los resultados combinados como JSON
-//         res.json(results);
-//         // res.json({"client": client});
-//     } catch (err) {
-//         console.error('Error al obtener resultados combinados:', err);
-//         res.status(500).json({ error: 'Error al obtener resultados combinados' });
-//     }
-// });
-
 
 app.get('/roscones/:client', async (req, res) => {
     const client = req.params.client;
@@ -86,10 +56,10 @@ app.get('/roscones/sum/size/fill', async (req, res) => {
     try {
         // Llamar al método obtenerResultadosCombinados y esperar los resultados
         const grNATA = (await db.sumAllBySizeAndFill('GRANDE', 'NATA'))[0]['SUM(quantity)'] ?? 0;
-        const grSin = (await db.sumAllBySizeAndFill('GRANDE', 'SIN'))[0]['SUM(quantity)'] ?? 0;
+        const grSin = (await db.sumAllBySizeAndFill('GRANDE', 'SIN RELLENO'))[0]['SUM(quantity)'] ?? 0;
         const grESP = (await db.sumSpecialsBySize('GRANDE'))[0]['SUM(quantity)'] ?? 0;
         const peqNATA = (await db.sumAllBySizeAndFill('PEQUEÑO', 'NATA'))[0]['SUM(quantity)'] ?? 0;
-        const peqSIN = (await db.sumAllBySizeAndFill('PEQUEÑO', 'SIN'))[0]['SUM(quantity)'] ?? 0;
+        const peqSIN = (await db.sumAllBySizeAndFill('PEQUEÑO', 'SIN RELLENO'))[0]['SUM(quantity)'] ?? 0;
         const peqESP = (await db.sumSpecialsBySize('PEQUEÑO'))[0]['SUM(quantity)'] ?? 0;
         // Enviar los resultados combinados como JSON
         console.log({
@@ -117,7 +87,6 @@ app.get('/roscones/sum/size/fill', async (req, res) => {
 // Metodo para obtener todos los roscones
 app.get('/roscones', async (req, res) => {
     try {
-        // Llamar al método obtenerResultadosCombinados y esperar los resultados
         const results = await db.selectAll();
         // Enviar los resultados combinados como JSON
         res.status(200).json(results);
@@ -131,7 +100,6 @@ app.get('/roscones', async (req, res) => {
 // Metodo para obtener todos los roscones especiales
 app.get('/especiales', async (req, res) => {
     try {
-        // Llamar al método obtenerResultadosCombinados y esperar los resultados
         const results = await db.selectAllSpecials();
         // Enviar los resultados combinados como JSON
         res.status(200).json(results);
@@ -163,7 +131,6 @@ app.delete('/roscones/:client', (req, res) => {
     db.deleteOrder(client)
 
     res.status(200).json({ message: 'OK' });
-    // res.status(200).send('OK');
 });
 
 app.put('/roscones/:client', (req, res) => {
@@ -193,7 +160,7 @@ app.put('/sold/:client', (req, res) => {
     res.status(200).json({ message: 'OK' });
 });
 
-app.put('/sold/:client', (req, res) => {
+app.put('/unsold/:client', (req, res) => {
     const client = req.params.client;
     //Marcamos los roscones del cliente a vendidos
     db.markAsUnsold(client);

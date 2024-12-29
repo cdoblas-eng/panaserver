@@ -99,7 +99,7 @@ async function selectAll() {
 
 async function selectAllSpecials() {
     const select_all_query = 'SELECT client, size, fill, half, quantity, timestamp, notes, vendido FROM roscones WHERE ((fill != ? AND fill != ?) OR half IS NOT NULL)'
-    return executeQuery(select_all_query, ['NATA', 'SIN']);
+    return executeQuery(select_all_query, ['NATA', 'SIN RELLENO']);
 }
 
 async function sumAllBySize(size) {
@@ -115,7 +115,7 @@ async function sumAllBySizeAndFill(size, fill) {
 
 async function sumSpecialsBySize(size) {
     const select_query = 'SELECT SUM(quantity) FROM roscones WHERE size = ? AND ((fill != ? AND fill != ?) OR half IS NOT NULL)'
-    return executeQuery(select_query, [size, 'NATA', 'SIN'])
+    return executeQuery(select_query, [size, 'NATA', 'SIN RELLENO'])
 }
 
 module.exports = {
