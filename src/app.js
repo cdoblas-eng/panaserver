@@ -54,7 +54,6 @@ app.get('/roscones/sum/size/fill', async (req, res) => {
     const size = req.params.size;
     const fill = req.params.fill;
     try {
-        // Llamar al método obtenerResultadosCombinados y esperar los resultados
         const grNATA = (await db.sumAllBySizeAndFill('GRANDE', 'NATA'))[0]['SUM(quantity)'] ?? 0;
         const grSin = (await db.sumAllBySizeAndFill('GRANDE', 'SIN RELLENO'))[0]['SUM(quantity)'] ?? 0;
         const grESP = (await db.sumSpecialsBySize('GRANDE'))[0]['SUM(quantity)'] ?? 0;
