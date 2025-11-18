@@ -37,9 +37,9 @@ app.get('/roscones/sum/size', async (req, res) => {
     let sumGrande = 0;
     let sumPequeno = 0;
     try {
-        const resultGrande = await db.sumAllBySize('GRANDE');
+        const resultGrande = await db.sumUnsoldBySize('GRANDE');
         sumGrande = resultGrande[0]['SUM(quantity)'] != null ? resultGrande[0]['SUM(quantity)'] : 0;
-        const resultPeq = await db.sumAllBySize('PEQUEÑO');
+        const resultPeq = await db.sumUnsoldBySize('PEQUEÑO');
         sumPequeno = resultPeq[0]['SUM(quantity)'] != null ? resultPeq[0]['SUM(quantity)'] : 0;
         // Enviar los resultados combinados como JSON
         res.status(200).json({GRANDE: sumGrande, PEQUENO: sumPequeno});
@@ -54,12 +54,12 @@ app.get('/roscones/sum/size/fill', async (req, res) => {
     const size = req.params.size;
     const fill = req.params.fill;
     try {
-        const grNATA = (await db.sumAllBySizeAndFill('GRANDE', 'NATA'))[0]['SUM(quantity)'] ?? 0;
-        const grSin = (await db.sumAllBySizeAndFill('GRANDE', 'SIN RELLENO'))[0]['SUM(quantity)'] ?? 0;
-        const grESP = (await db.sumSpecialsBySize('GRANDE'))[0]['SUM(quantity)'] ?? 0;
-        const peqNATA = (await db.sumAllBySizeAndFill('PEQUEÑO', 'NATA'))[0]['SUM(quantity)'] ?? 0;
-        const peqSIN = (await db.sumAllBySizeAndFill('PEQUEÑO', 'SIN RELLENO'))[0]['SUM(quantity)'] ?? 0;
-        const peqESP = (await db.sumSpecialsBySize('PEQUEÑO'))[0]['SUM(quantity)'] ?? 0;
+        const grNATA = (await db.sumUnsoldBySizeAndFill('GRANDE', 'NATA'))[0]['SUM(quantity)'] ?? 0;
+        const grSin = (await db.sumUnsoldBySizeAndFill('GRANDE', 'SIN RELLENO'))[0]['SUM(quantity)'] ?? 0;
+        const grESP = (await db.sumUnsoldSpecialsBySize('GRANDE'))[0]['SUM(quantity)'] ?? 0;
+        const peqNATA = (await db.sumUnsoldBySizeAndFill('PEQUEÑO', 'NATA'))[0]['SUM(quantity)'] ?? 0;
+        const peqSIN = (await db.sumUnsoldBySizeAndFill('PEQUEÑO', 'SIN RELLENO'))[0]['SUM(quantity)'] ?? 0;
+        const peqESP = (await db.sumUnsoldSpecialsBySize('PEQUEÑO'))[0]['SUM(quantity)'] ?? 0;
         // Enviar los resultados combinados como JSON
         console.log({
             grNATA: grNATA,
@@ -117,11 +117,19 @@ app.post('/roscones/:client', (req, res) => {
     if (!receivedJson || !Array.isArray(receivedJson)) {
         return res.status(400).json({ error: 'Invalid JSON format' });
     }
-    receivedJson.forEach((roscon) => {
-        db.insertRoscon(client, roscon)
+    db.getAndIncreaseOrderCounter((err, valorContador) =>{
+        if (err) {
+            console.error('Error:', err);
+            return res.status(400).json({ message: 'Error al obtener contador' });
+        } else {
+            receivedJson.forEach((roscon) => {
+                db.insertRoscon(valorContador, client, roscon)
+            });
+            return res.status(200).json({ message: 'OK', numeroCliente: valorContador });
+        }
     });
 
-    res.status(200).json({ message: 'OK' });
+
 });
 
 app.delete('/roscones/:client', (req, res) => {
@@ -145,7 +153,7 @@ app.put('/roscones/:client', (req, res) => {
     db.deleteOrder(client)
     //Insertamos los nuevos roscones actualizados
     receivedJson.forEach((roscon) => {
-        db.insertRoscon(client, roscon)
+        db.insertRoscon(0, client, roscon)
     });
 
     res.status(200).json({ message: 'OK' });

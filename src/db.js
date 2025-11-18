@@ -10,6 +10,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         db.run(`
             CREATE TABLE IF NOT EXISTS "roscones" (
             "id" INTEGER,
+            "num_pedido" INTEGER,
             "client" TEXT NOT NULL,
             "size" TEXT NOT NULL,
             "fill" TEXT NOT NULL,
@@ -21,8 +22,50 @@ const db = new sqlite3.Database(dbPath, (err) => {
             PRIMARY KEY("ID" AUTOINCREMENT)
             )
         `);
+
+        db.run(`CREATE TABLE IF NOT EXISTS contador (valor INTEGER)`, (err) => {
+            if (err) {
+                return console.error(err.message);
+            }
+            // Inicializar la tabla con un valor de 0 si está vacía
+            db.get(`SELECT COUNT(*) AS total FROM contador`, (err, row) => {
+                if (err) {
+                    return console.error(err.message);
+                }
+                if (row.total === 0) {
+                    db.run(`INSERT INTO contador (valor) VALUES (0)`);
+                    console.log('Contador inicializado a 0.');
+                }
+            });
+        });
     }
 });
+
+function getAndIncreaseOrderCounter(callback) {
+    db.serialize(() => {
+        // Obtener el valor actual
+        db.get(`SELECT valor FROM contador`, (err, row) => {
+            if (err) {
+                console.error(err.message);
+                return callback(err, null);
+            }
+
+            const valorAnterior = row ? row.valor : 0;
+            const nuevoValor = valorAnterior + 1;
+
+            // Incrementar el contador
+            db.run(`UPDATE contador SET valor = ?`, [nuevoValor], (err) => {
+                if (err) {
+                    console.error(err.message);
+                    return callback(err, null);
+                }
+
+                // Devolver el valor anterior
+                callback(null, valorAnterior);
+            });
+        });
+    });
+}
 
 // Función para cerrar la conexión a la base de datos
 const closeDatabase = (callback) => {
@@ -36,23 +79,25 @@ const closeDatabase = (callback) => {
         callback();
     });
 };
-const insertRoscon = (client, roscon) => {
-        db.run(
-            'INSERT INTO roscones (client, quantity, notes, size, fill, half) VALUES (?, ?, ?, ?, ?, ?)',
-            [
-                client,
-                roscon.quantity,
-                roscon.notes ? roscon.notes : null,
-                roscon.size,
-                roscon.fill,
-                roscon.half ? roscon.half : null
-            ],
-            (err) => {
-                if (err) {
-                    console.error(err.message);
-                }
+const insertRoscon = (num_pedido, client, roscon) => {
+    console.log(num_pedido);
+    db.run(
+        'INSERT INTO roscones (num_pedido, client, quantity, notes, size, fill, half) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+            num_pedido,
+            client,
+            roscon.quantity,
+            roscon.notes ? roscon.notes : null,
+            roscon.size,
+            roscon.fill,
+            roscon.half ? roscon.half : null
+        ],
+        (err) => {
+            if (err) {
+                console.error(err.message);
             }
-        );
+        }
+    );
 };
 
 // Función para ejecutar una consulta y devolver una promesa
@@ -69,22 +114,22 @@ function executeQuery(sql, params) {
 }
 
 async function selectRoscones(client) {
-    const select_query = 'SELECT size, fill, half, quantity, notes, vendido FROM roscones WHERE client = ?'
-    return executeQuery(select_query, [client])
+    const select_query = 'SELECT size, fill, half, quantity, notes, vendido FROM roscones WHERE client = ? OR num_pedido = ?'
+    return executeQuery(select_query, [client, client])
 }
 
 async function markAsSold(client) {
-    const select_query = 'UPDATE roscones SET vendido = \'TRUE\' WHERE client = ?'
-    return executeQuery(select_query, [client])
+    const select_query = 'UPDATE roscones SET vendido = \'TRUE\' WHERE client = ? OR num_pedido = ?'
+    return executeQuery(select_query, [client, client])
 }
 
 async function markAsUnsold(client) {
-    const select_query = 'UPDATE roscones SET vendido = \'FALSE\' WHERE client = ?'
-    return executeQuery(select_query, [client])
+    const select_query = 'UPDATE roscones SET vendido = \'FALSE\' WHERE client = ? OR num_pedido = ?'
+    return executeQuery(select_query, [client, client])
 }
 
 function deleteOrder(client) {
-    db.run('DELETE FROM roscones WHERE client = ? ', [client], function (err) {
+    db.run('DELETE FROM roscones WHERE client = ? OR num_pedido = ? ', [client, client], function (err) {
         if (err) {
             console.error('Error al ejecutar la consulta DELETE:', err);
         }
@@ -118,6 +163,22 @@ async function sumSpecialsBySize(size) {
     return executeQuery(select_query, [size, 'NATA', 'SIN RELLENO'])
 }
 
+async function sumUnsoldBySize(size) {
+    const select_query = 'SELECT SUM(quantity) FROM roscones WHERE size = ? AND vendido = \'FALSE\''
+    return executeQuery(select_query, [size])
+}
+
+
+async function sumUnsoldBySizeAndFill(size, fill) {
+    const select_query = 'SELECT SUM(quantity) FROM roscones WHERE size = ? AND fill = ? AND vendido = \'FALSE\''
+    return executeQuery(select_query, [size, fill])
+}
+
+async function sumUnsoldSpecialsBySize(size) {
+    const select_query = 'SELECT SUM(quantity) FROM roscones WHERE size = ? AND ((fill != ? AND fill != ?) OR half IS NOT NULL) AND vendido = \'FALSE\''
+    return executeQuery(select_query, [size, 'NATA', 'SIN RELLENO'])
+}
+
 module.exports = {
     db,
     closeDatabase,
@@ -130,5 +191,9 @@ module.exports = {
     markAsUnsold,
     sumAllBySize,
     sumAllBySizeAndFill,
-    sumSpecialsBySize
+    sumSpecialsBySize,
+    sumUnsoldBySize,
+    sumUnsoldBySizeAndFill,
+    sumUnsoldSpecialsBySize,
+    getAndIncreaseOrderCounter
 };
