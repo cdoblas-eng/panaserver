@@ -138,12 +138,12 @@ function deleteOrder(client) {
 
 
 async function selectAll() {
-    const select_all_query = 'SELECT client, size, fill, half, quantity, timestamp, notes, vendido FROM roscones';
+    const select_all_query = 'SELECT num_pedido, client, size, fill, half, quantity, timestamp, notes, vendido FROM roscones';
     return executeQuery(select_all_query, []);
 }
 
 async function selectAllSpecials() {
-    const select_all_query = 'SELECT client, size, fill, half, quantity, timestamp, notes, vendido FROM roscones WHERE ((fill != ? AND fill != ?) OR half IS NOT NULL)'
+    const select_all_query = 'SELECT num_pedido, client, size, fill, half, quantity, timestamp, notes, vendido FROM roscones WHERE ((fill != ? AND fill != ?) OR half IS NOT NULL)'
     return executeQuery(select_all_query, ['NATA', 'SIN RELLENO']);
 }
 
@@ -189,9 +189,6 @@ module.exports = {
     selectAllSpecials,
     markAsSold,
     markAsUnsold,
-    sumAllBySize,
-    sumAllBySizeAndFill,
-    sumSpecialsBySize,
     sumUnsoldBySize,
     sumUnsoldBySizeAndFill,
     sumUnsoldSpecialsBySize,
